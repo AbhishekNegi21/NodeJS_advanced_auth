@@ -2,7 +2,6 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { login } from "../api/authApi";
 
 const Login = () => {
   const { loginUser } = useAuth();
@@ -19,16 +18,15 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const data = await login(email, password);
+      const data = await loginUser(email, password);
 
       if ("twoFactorRequired" in data) {
-        navigate("/verify-2fa", {
+        navigate("/2fa/verify", {
           state: { userId: data.userId },
         });
         return;
       }
 
-      loginUser(data.user, data.accessToken);
       navigate("/dashboard");
     } catch (err: unknown) {
       if (err instanceof Error) {

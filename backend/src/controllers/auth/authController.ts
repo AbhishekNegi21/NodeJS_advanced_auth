@@ -231,9 +231,16 @@ export async function loginHandler(req: Request, res: Response) {
     }
 
     if (user.twoFactorEnabled) {
-      if (!twoFactorCode || typeof twoFactorCode !== "string") {
-        return res.status(400).json({
-          message: "Two factor code required",
+      // if (!twoFactorCode || typeof twoFactorCode !== "string") {
+      //   return res.status(400).json({
+      //     message: "Two factor code required",
+      //   });
+      // }
+
+      if (!twoFactorCode) {
+        return res.status(200).json({
+          twoFactorRequired: true,
+          userId: user.id,
         });
       }
 

@@ -23,7 +23,7 @@ export const login = async (
   email: string,
   password: string,
 ): Promise<LoginResponse> => {
-  return fetchClient<AuthResponse>("/auth/login", {
+  return fetchClient<LoginResponse>("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
@@ -34,16 +34,17 @@ export const register = async (
   email: string,
   password: string,
 ): Promise<User> => {
-  const data: AuthResponse = await fetchClient<AuthResponse>("/auth/register", {
+  const data = await fetchClient<AuthResponse>("/auth/register", {
     method: "POST",
     body: JSON.stringify({ name, email, password }),
   });
+
   setAccessToken(data.accessToken);
   return data.user;
 };
 
 export const getMe = async (): Promise<User> => {
-  const data: AuthResponse = await fetchClient<AuthResponse>("/auth/me");
+  const data = await fetchClient<AuthResponse>("/auth/me");
   setAccessToken(data.accessToken);
   return data.user;
 };
@@ -51,4 +52,14 @@ export const getMe = async (): Promise<User> => {
 export const logout = async () => {
   await fetchClient("/auth/logout", { method: "POST" });
   setAccessToken(null);
+};
+
+export const verify2FA = async (
+  userId: string,
+  code: string,
+): Promise<AuthResponse> => {
+  return fetchClient<AuthResponse>("/auth/verify-2fa", {
+    method: "POST",
+    body: JSON.stringify({ userId, code }),
+  });
 };

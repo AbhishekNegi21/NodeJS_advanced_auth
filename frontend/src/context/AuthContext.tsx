@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
-import type { User } from "../api/authApi";
-import { login, register, logout, getMe } from "../api/authApi";
+import type { User, LoginResponse } from "../api/authApi";
+import { login, logout, getMe } from "../api/authApi";
+import { setAccessToken } from "../api/fetchClient";
 import { AuthContext } from "./authContext";
 
 interface Props {
@@ -17,8 +18,7 @@ export const AuthProvider = ({ children }: Props) => {
       try {
         const userData = await getMe();
         setUser(userData);
-      } catch (err) {
-        console.log(err);
+      } catch {
         setUser(null);
       } finally {
         setLoading(false);
@@ -28,23 +28,24 @@ export const AuthProvider = ({ children }: Props) => {
     checkAuth();
   }, []);
 
-  const loginUser = async (email: string, password: string) => {
-    const userData = await login(email, password);
-    setUser(userData);
-  };
-
-  const registerUser = async (
-    name: string,
+  const loginUser = async (
     email: string,
     password: string,
-  ) => {
-    const userData = await register(name, email, password);
-    setUser(userData);
+  ): Promise<LoginResponse> => {
+    const data = await login(email, password);
+
+    if ("accessToken" in data) {
+      setUser(data.user);
+      setAccessToken(data.accessToken);
+    }
+
+    return data;
   };
 
   const logoutUser = async () => {
     await logout();
     setUser(null);
+    setAccessToken(null);
   };
 
   return (
@@ -53,8 +54,8 @@ export const AuthProvider = ({ children }: Props) => {
         user,
         loading,
         loginUser,
-        registerUser,
         logoutUser,
+        setUser,
       }}
     >
       {children}
