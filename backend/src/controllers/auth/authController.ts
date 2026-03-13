@@ -717,7 +717,7 @@ export async function twoFactorAuthHandler(req: AuthRequest, res: Response) {
   const authUser = req.user;
 
   if (!authUser) {
-    return res.status(400).json({
+    return res.status(401).json({
       message: "Not authenticated",
     });
   }
@@ -743,18 +743,18 @@ export async function twoFactorAuthHandler(req: AuthRequest, res: Response) {
     });
 
     // set the secret as the twoFactorSecret
-    user.twoFactorSecret = secret;
+    user.twoFactorTempSecret = secret;
 
     // save the user in the db
     await user.save();
 
     // return a 200 resposne
     return res.json({
-      message: "2FA setup successfull",
+      message: "2FA setup successful",
       otpAuthUrl,
     });
   } catch (err) {
-    console.log(err);
+    console.log("2FA setup error!", err);
     return res.status(500).json({
       message: "Internal server error",
     });
@@ -765,11 +765,12 @@ export async function twoFactorVerifyHandler(req: AuthRequest, res: Response) {
   const authUser = req.user;
 
   if (!authUser) {
-    return res.status(400).json({
+    return res.status(401).json({
       message: "Not authenticated",
     });
   }
 
+  // extract the code from req.body as string
   const { code } = req.body as { code?: string };
 
   if (!code) {
@@ -781,20 +782,21 @@ export async function twoFactorVerifyHandler(req: AuthRequest, res: Response) {
   try {
     // find the user in the db
     const user = await User.findById(authUser.id);
+
     if (!user) {
-      return res.status(400).json({
+      return res.status(404).json({
         message: "User not found",
       });
     }
 
-    if (!user.twoFactorSecret) {
+    if (!user.twoFactorTempSecret) {
       return res.status(400).json({
         message: "2FA setup not done.",
       });
     }
 
     const isValid = verify({
-      secret: user.twoFactorSecret,
+      secret: user.twoFactorTempSecret,
       token: code,
     });
 
@@ -805,6 +807,9 @@ export async function twoFactorVerifyHandler(req: AuthRequest, res: Response) {
     }
 
     // mark the twoFactorEnabed as true
+    // move temp secret to permanent
+    user.twoFactorSecret = user.twoFactorTempSecret;
+    user.twoFactorTempSecret = undefined;
     user.twoFactorEnabled = true;
 
     // save the user
@@ -816,7 +821,7 @@ export async function twoFactorVerifyHandler(req: AuthRequest, res: Response) {
       twoFactorEnabled: true,
     });
   } catch (err) {
-    console.log(err);
+    console.log("2FA verify error!", err);
     return res.status(500).json({
       message: "Internal server error",
     });

@@ -1,4 +1,5 @@
 import { Schema, model } from "mongoose";
+import { string } from "zod";
 
 const userSchema = new Schema(
   {
@@ -29,6 +30,10 @@ const userSchema = new Schema(
       default: false,
     },
     twoFactorSecret: {
+      type: String,
+      default: undefined,
+    },
+    twoFactorTempSecret: {
       type: String,
       default: undefined,
     },
