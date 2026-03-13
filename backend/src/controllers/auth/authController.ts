@@ -734,15 +734,13 @@ export async function twoFactorAuthHandler(req: AuthRequest, res: Response) {
     // generate a secret using optlib generateSecret
     const secret = generateSecret();
 
-    const issuer = "NodeAdvancedAuthApp";
-
     const otpAuthUrl = generateURI({
-      issuer,
+      issuer: "NodeAdvancedAuthApp",
       label: user.email,
       secret,
     });
 
-    // set the secret as the twoFactorSecret
+    // set the secret as the twoFactorTempSecret
     user.twoFactorTempSecret = secret;
 
     // save the user in the db
@@ -795,6 +793,7 @@ export async function twoFactorVerifyHandler(req: AuthRequest, res: Response) {
       });
     }
 
+    // verify the OTP code
     const isValid = verify({
       secret: user.twoFactorTempSecret,
       token: code,
@@ -806,8 +805,8 @@ export async function twoFactorVerifyHandler(req: AuthRequest, res: Response) {
       });
     }
 
-    // mark the twoFactorEnabed as true
     // move temp secret to permanent
+    // mark the twoFactorEnabed as true
     user.twoFactorSecret = user.twoFactorTempSecret;
     user.twoFactorTempSecret = undefined;
     user.twoFactorEnabled = true;
